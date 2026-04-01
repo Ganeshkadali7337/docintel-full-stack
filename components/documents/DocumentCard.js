@@ -62,14 +62,32 @@ export default function DocumentCard({
           </div>
         </div>
 
-        {/* Delete button */}
-        <button
-          onClick={() => setIsDeleteModalOpen(true)}
-          className="text-zinc-700 hover:text-red-400 text-xs shrink-0 mt-0.5 transition-colors"
-          aria-label="Delete document"
-        >
-          ✕
-        </button>
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 shrink-0 mt-0.5">
+          {/* Download button */}
+          <a
+            href={`/api/documents/${document.id}/download`}
+            download
+            className="text-zinc-700 hover:text-zinc-300 transition-colors"
+            aria-label="Download document"
+            onClick={e => e.stopPropagation()}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </a>
+
+          {/* Delete button */}
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="text-zinc-700 hover:text-red-400 text-xs transition-colors"
+            aria-label="Delete document"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <DeleteConfirmModal
