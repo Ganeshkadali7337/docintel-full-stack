@@ -8,7 +8,6 @@ import CompareResult from './CompareResult.js'
 import ChatInput from '../chat/ChatInput.js'
 import StreamingIndicator from '../chat/StreamingIndicator.js'
 import MessageBubble from '../chat/MessageBubble.js'
-import EmptyState from '../ui/EmptyState.js'
 
 export default function CompareWindow({ selectedDocuments }) {
   const {
@@ -54,25 +53,23 @@ export default function CompareWindow({ selectedDocuments }) {
         </div>
       </div>
 
-      <div className="compare-messages">
-        {displayMessages.length === 0 && !isStreaming && (
-          <EmptyState
-            title="Compare documents"
-            subtitle="Ask a question to compare the selected documents"
-          />
-        )}
-        {displayMessages.map(message => (
-          message.role === 'USER'
-            ? <MessageBubble key={message.id} message={message} />
-            : <CompareResult key={message.id} content={message.content} />
-        ))}
-        {isStreaming && !streamingMessage && <StreamingIndicator />}
-      </div>
-
-      <ChatInput
-        onSend={handleSend}
-        isDisabled={isStreaming}
-      />
+      {displayMessages.length > 0 || isStreaming ? (
+        <>
+          <div className="compare-messages">
+            {displayMessages.map(message => (
+              message.role === 'USER'
+                ? <MessageBubble key={message.id} message={message} />
+                : <CompareResult key={message.id} content={message.content} />
+            ))}
+            {isStreaming && !streamingMessage && <StreamingIndicator />}
+          </div>
+          <ChatInput onSend={handleSend} isDisabled={isStreaming} />
+        </>
+      ) : (
+        <div className="compare-empty">
+          <ChatInput onSend={handleSend} isDisabled={isStreaming} />
+        </div>
+      )}
 
       <style>{`
         .compare-window {
@@ -117,6 +114,24 @@ export default function CompareWindow({ selectedDocuments }) {
           flex-direction: column;
           gap: 12px;
           background: #09090b;
+        }
+        .compare-empty {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 40px;
+          background: #09090b;
+        }
+        .compare-empty .chat-input-area {
+          border-top: none;
+          border: 0.5px solid #27272a;
+          border-radius: 12px;
+          max-width: 640px;
+          padding: 8px 12px;
+        }
+        .compare-empty .send-button {
+          align-self: center;
         }
       `}</style>
     </div>
