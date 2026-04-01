@@ -1,4 +1,4 @@
-// UploadZone — drag-and-drop file upload area, dark theme
+// UploadZone — drag-and-drop file upload area, supports multiple files, dark theme
 
 'use client'
 
@@ -8,24 +8,29 @@ import { ACCEPTED_MIME_TYPES } from '../../lib/utils/constants'
 import { validateFile } from '../../lib/utils/fileValidation'
 import { showError } from '../ui/Toast'
 
-export default function UploadZone({ onUpload, isUploading }) {
+export default function UploadZone({ onUpload, isDisabled }) {
   const onDrop = useCallback(
     (acceptedFiles) => {
-      const file = acceptedFiles[0]
-      if (!file) return
+      if (!acceptedFiles || acceptedFiles.length === 0) return
 
-      const validation = validateFile({
-        size: file.size,
-        mimetype: file.type,
-        originalFilename: file.name,
-      })
-
-      if (!validation.valid) {
-        showError(validation.error)
-        return
+      // Validate each file — collect valid ones, show errors for invalid ones
+      const validFiles = []
+      for (const file of acceptedFiles) {
+        const validation = validateFile({
+          size: file.size,
+          mimetype: file.type,
+          originalFilename: file.name,
+        })
+        if (validation.valid) {
+          validFiles.push(file)
+        } else {
+          showError(`${file.name}: ${validation.error}`)
+        }
       }
 
-      onUpload(file)
+      if (validFiles.length > 0) {
+        onUpload(validFiles)
+      }
     },
     [onUpload]
   )
@@ -36,8 +41,8 @@ export default function UploadZone({ onUpload, isUploading }) {
       acc[type] = []
       return acc
     }, {}),
-    multiple: false,
-    disabled: isUploading,
+    multiple: true,
+    disabled: isDisabled,
   })
 
   return (
@@ -48,15 +53,13 @@ export default function UploadZone({ onUpload, isUploading }) {
         ${isDragActive
           ? 'border-zinc-500 bg-zinc-800'
           : 'border-zinc-700 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800'}
-        ${isUploading ? 'opacity-40 cursor-not-allowed' : ''}
+        ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
       `}
     >
       <input {...getInputProps()} />
 
-      {isUploading ? (
-        <p className="text-sm text-zinc-500">Uploading...</p>
-      ) : isDragActive ? (
-        <p className="text-sm text-zinc-300">Drop your file here</p>
+      {isDragActive ? (
+        <p className="text-sm text-zinc-300">Drop your files here</p>
       ) : (
         <div>
           <p className="text-sm text-zinc-300 font-medium">

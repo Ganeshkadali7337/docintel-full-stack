@@ -19,11 +19,9 @@ export default function DashboardPage() {
   const {
     documents,
     isLoading,
-    isUploading,
-    uploadProgress,
-    uploadingFile,
+    uploadItems,
     fetchDocuments,
-    uploadDocument,
+    uploadDocuments,
     deleteDocument,
   } = useDocuments(selectedIds, setSelectedIds)
 
@@ -64,10 +62,8 @@ export default function DashboardPage() {
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onDelete={deleteDocument}
-        onUpload={uploadDocument}
-        isUploading={isUploading}
-        uploadProgress={uploadProgress}
-        uploadingFile={uploadingFile}
+        onUpload={uploadDocuments}
+        uploadItems={uploadItems}
       />
 
       {/* Right main area: chat or comparison interface (Parts 3 and 4) */}

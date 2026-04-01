@@ -1,5 +1,5 @@
 // useDocuments hook — manages all document state and operations
-// Handles fetching, uploading (with progress), polling, and deletion
+// Handles fetching, multi-file uploading with per-file progress, polling, and deletion
 
 'use client'
 
@@ -12,13 +12,19 @@ import { showSuccess, showError } from '../components/ui/Toast'
 // selectedIds and setSelectedIds are passed in from the page so deletion can
 // deselect a document that's been removed
 export function useDocuments(selectedIds, setSelectedIds) {
-  const [documents, setDocuments] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadingFile, setUploadingFile] = useState(null)
+  const [documents, setDocuments]     = useState([])
+  const [isLoading, setIsLoading]     = useState(false)
+  const [uploadItems, setUploadItems] = useState([]) // { id, name, progress, stage }
 
   const { startPolling } = usePolling()
+
+  // Helpers to update and remove a single item in uploadItems by its temp id
+  function updateItem(itemId, patch) {
+    setUploadItems(prev => prev.map(item => item.id === itemId ? { ...item, ...patch } : item))
+  }
+  function removeItem(itemId) {
+    setUploadItems(prev => prev.filter(item => item.id !== itemId))
+  }
 
   // Fetch all documents for the current user from the API
   async function fetchDocuments() {
@@ -26,75 +32,75 @@ export function useDocuments(selectedIds, setSelectedIds) {
     try {
       const response = await axios.get('/api/documents')
       setDocuments(response.data?.data?.documents || [])
-    } catch (error) {
+    } catch {
       showError('Failed to load documents')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Upload a file, track progress, then poll for processing status
-  async function uploadDocument(file) {
-    setIsUploading(true)
-    setUploadProgress(0)
-    setUploadingFile(file.name)
+  // Upload an array of files one by one — sequential loop
+  // Each file gets its own progress entry in uploadItems
+  async function uploadDocuments(files) {
+    for (const file of files) {
+      const itemId = `${Date.now()}-${Math.random()}`
 
-    try {
-      // Build multipart form data with the file
-      const formData = new FormData()
-      formData.append('file', file)
+      // Add this file to the progress list immediately
+      setUploadItems(prev => [...prev, { id: itemId, name: file.name, progress: 0, stage: 'uploading' }])
 
-      // POST to the upload endpoint, tracking upload progress
-      const response = await axios.post('/api/documents', formData, {
-        onUploadProgress: (progressEvent) => {
-          // progressEvent.total may be undefined in some browsers
-          if (progressEvent.total) {
-            const percent = Math.round(
-              (progressEvent.loaded / progressEvent.total) * 100
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await axios.post('/api/documents', formData, {
+          onUploadProgress: (e) => {
+            if (e.total) {
+              const percent = Math.round((e.loaded / e.total) * 100)
+              updateItem(itemId, { progress: percent })
+            }
+          },
+        })
+
+        const newDocument = response.data?.data?.document
+        if (!newDocument) throw new Error('Upload response missing document data')
+
+        // Add the document to the list immediately (status = PENDING)
+        setDocuments(prev => [newDocument, ...prev])
+
+        // Move to processing stage
+        updateItem(itemId, { stage: 'processing' })
+
+        // Wait for processing to complete before uploading the next file
+        await new Promise((resolve) => {
+          startPolling(newDocument.id, ({ status, errorMessage, pageCount }) => {
+            setDocuments(prev =>
+              prev.map(doc =>
+                doc.id === newDocument.id
+                  ? { ...doc, status, errorMessage, pageCount }
+                  : doc
+              )
             )
-            setUploadProgress(percent)
-          }
-        },
-      })
 
-      const newDocument = response.data?.data?.document
-      if (!newDocument) {
-        throw new Error('Upload response missing document data')
+            if (status === 'READY') {
+              showSuccess(`${file.name} is ready`)
+              updateItem(itemId, { stage: 'done' })
+              setTimeout(() => removeItem(itemId), 1500)
+              resolve()
+            } else if (status === 'FAILED') {
+              showError(`Processing failed: ${errorMessage || 'Unknown error'}`)
+              updateItem(itemId, { stage: 'error' })
+              setTimeout(() => removeItem(itemId), 3000)
+              resolve()
+            }
+          })
+        })
+
+      } catch (error) {
+        const message = error.response?.data?.error || 'Upload failed'
+        showError(`${file.name}: ${message}`)
+        updateItem(itemId, { stage: 'error' })
+        setTimeout(() => removeItem(itemId), 3000)
       }
-
-      // Add the new document to the list immediately (status = PENDING)
-      setDocuments((previousDocuments) => [newDocument, ...previousDocuments])
-
-      // Start polling to track when the document finishes processing
-      startPolling(newDocument.id, ({ status, errorMessage, pageCount }) => {
-        // Update this specific document's status in the list
-        setDocuments((previousDocuments) =>
-          previousDocuments.map((document) =>
-            document.id === newDocument.id
-              ? { ...document, status, errorMessage, pageCount }
-              : document
-          )
-        )
-
-        // When processing completes, show a toast and stop the upload state
-        if (status === 'READY') {
-          showSuccess(`${file.name} is ready`)
-          setIsUploading(false)
-          setUploadingFile(null)
-        } else if (status === 'FAILED') {
-          showError(`Processing failed: ${errorMessage || 'Unknown error'}`)
-          setIsUploading(false)
-          setUploadingFile(null)
-        }
-      })
-
-      // Upload itself succeeded — note: processing continues via polling above
-      // We keep isUploading=true until polling finishes so UploadProgress stays visible
-    } catch (error) {
-      const message = error.response?.data?.error || 'Upload failed'
-      showError(message)
-      setIsUploading(false)
-      setUploadingFile(null)
     }
   }
 
@@ -103,16 +109,10 @@ export function useDocuments(selectedIds, setSelectedIds) {
     try {
       await axios.delete(`/api/documents/${documentId}`)
 
-      // Remove the document from the list
-      setDocuments((previousDocuments) =>
-        previousDocuments.filter((document) => document.id !== documentId)
-      )
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId))
 
-      // If the deleted document was selected, deselect it
       if (selectedIds && setSelectedIds) {
-        setSelectedIds((previousIds) =>
-          previousIds.filter((id) => id !== documentId)
-        )
+        setSelectedIds(prev => prev.filter(id => id !== documentId))
       }
 
       showSuccess('Document deleted')
@@ -125,11 +125,9 @@ export function useDocuments(selectedIds, setSelectedIds) {
   return {
     documents,
     isLoading,
-    isUploading,
-    uploadProgress,
-    uploadingFile,
+    uploadItems,
     fetchDocuments,
-    uploadDocument,
+    uploadDocuments,
     deleteDocument,
   }
 }
