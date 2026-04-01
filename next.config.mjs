@@ -1,4 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+// Next.js configuration for Document Intelligence Platform
 
-export default nextConfig;
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Keep strict mode on — helps catch bugs early in development
+  reactStrictMode: true,
+}
+
+export default nextConfig

@@ -1,0 +1,138 @@
+// Prisma schema for Document Intelligence Platform
+// Defines ALL tables upfront so the DB is fully set up from Part 1
+
+// Run: npx prisma migrate dev --name init
+// Then: npx prisma generate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------
+// User table — stores registered users
+// -----------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  documents     Document[]
+  conversations Conversation[]
+}
+
+// -----------------------------------------------
+// Document table — stores uploaded file metadata
+// Status tracks where the document is in the pipeline
+// -----------------------------------------------
+model Document {
+  id                 String         @id @default(cuid())
+  userId             String
+  filename           String         // Sanitized filename used in storage
+  originalName       String         // Original filename the user uploaded
+  fileSize           Int            // File size in bytes
+  pageCount          Int?           // Filled after text extraction in Part 2
+  cloudinaryUrl      String
+  cloudinaryPublicId String
+  status             DocumentStatus @default(PENDING)
+  errorMessage       String?        // Filled if status is FAILED
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  // Relations
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks                Chunk[]
+  conversationDocuments ConversationDocument[]
+}
+
+// Document processing status enum
+enum DocumentStatus {
+  PENDING    // Just uploaded, waiting to be processed
+  PROCESSING // Text extraction and embedding in progress (Part 2)
+  READY      // Fully processed and ready for Q&A (Part 3+)
+  FAILED     // Processing failed — errorMessage has details
+}
+
+// -----------------------------------------------
+// Chunk table — stores text chunks extracted from documents
+// Used in Part 2 (text extraction) and Part 3 (RAG retrieval)
+// -----------------------------------------------
+model Chunk {
+  id         String   @id @default(cuid())
+  documentId String
+  content    String   // The actual text content of this chunk
+  chunkIndex Int      // Order of this chunk within the document
+  pageNumber Int?     // Which page this chunk came from
+  tokenCount Int      // Number of tokens in this chunk
+  createdAt  DateTime @default(now())
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------
+// Conversation table — stores chat sessions
+// Supports both single-doc Q&A (Part 3) and multi-doc comparison (Part 4)
+// -----------------------------------------------
+model Conversation {
+  id        String           @id @default(cuid())
+  userId    String
+  type      ConversationType
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationDocuments ConversationDocument[]
+  messages              Message[]
+}
+
+// Conversation type enum
+enum ConversationType {
+  SINGLE     // Single document Q&A (Part 3)
+  COMPARISON // Multi-document comparison (Part 4)
+}
+
+// -----------------------------------------------
+// ConversationDocument join table
+// Links conversations to one or more documents (many-to-many)
+// -----------------------------------------------
+model ConversationDocument {
+  id             String @id @default(cuid())
+  conversationId String
+  documentId     String
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------
+// Message table — stores chat messages in a conversation
+// sources field stores chunk references for source attribution (Part 3)
+// -----------------------------------------------
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String
+  // sources stores array of: { chunkId, documentId, documentName, pageNumber, preview }
+  sources        Json?
+  createdAt      DateTime    @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+// Message role enum
+enum MessageRole {
+  USER      // Message sent by the human user
+  ASSISTANT // Message sent by the AI
+}
