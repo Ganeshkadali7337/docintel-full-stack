@@ -8,7 +8,7 @@ import { sendError } from '../../../lib/utils/errorHandler.js'
 import { getDocumentByIdAndUserId } from '../../../lib/db/queries/documents.js'
 import { generateEmbedding } from '../../../lib/services/embedder.js'
 import { queryVectorsForMultipleDocs } from '../../../lib/services/vectordb.js'
-import { buildComparePrompt, streamLLMResponse } from '../../../lib/services/llm.js'
+import { buildComparePrompt, buildDirectPrompt, detectIntent, streamLLMResponse } from '../../../lib/services/llm.js'
 import { createComparisonConversation } from '../../../lib/db/queries/conversations.js'
 import { createMessage } from '../../../lib/db/queries/messages.js'
 import { getChunksByIds } from '../../../lib/db/queries/chunks.js'
@@ -57,42 +57,52 @@ export async function POST(request) {
     // Step 6: Save user question
     await createMessage(conversation.id, 'USER', question, null)
 
-    // Step 7: Embed the question
-    const questionEmbedding = await generateEmbedding(question)
+    // Step 7: Detect intent — skip RAG pipeline for general chat
+    const intent = await detectIntent(question)
 
-    // Step 8: Query each document's vectors separately
-    const docResults = await queryVectorsForMultipleDocs(
-      questionEmbedding,
-      documentIds,
-      3
-    )
+    let messages
 
-    // Step 9: Fetch full chunk content from DB for all matched chunks
-    const allChunkIds = docResults.flatMap(r => r.matches.map(m => m.id))
-    const dbChunks = await getChunksByIds(allChunkIds)
+    if (intent === 'general_chat') {
+      // General chat — respond directly without touching vectors or documents
+      messages = buildDirectPrompt(question, [])
+    } else {
+      // Step 8: Embed the question
+      const questionEmbedding = await generateEmbedding(question)
 
-    // Add document names and merge full DB content into matches
-    const docResultsWithNames = docResults.map(result => ({
-      ...result,
-      documentName:
-        documents.find(d => d.id === result.documentId)?.originalName ||
-        result.documentId,
-      matches: result.matches.map(match => {
-        const dbChunk = dbChunks.find(c => c.id === match.id)
-        return {
-          ...match,
-          metadata: {
-            ...match.metadata,
-            contentPreview: dbChunk?.content || match.metadata?.contentPreview || '',
-          },
-        }
-      }),
-    }))
+      // Step 9: Query each document's vectors separately
+      const docResults = await queryVectorsForMultipleDocs(
+        questionEmbedding,
+        documentIds,
+        3
+      )
 
-    // Step 10: Build comparison prompt
-    const messages = buildComparePrompt(question, docResultsWithNames)
+      // Step 10: Fetch full chunk content from DB for all matched chunks
+      const allChunkIds = docResults.flatMap(r => r.matches.map(m => m.id))
+      const dbChunks = await getChunksByIds(allChunkIds)
 
-    // Step 11: Stream comparison response
+      // Add document names and merge full DB content into matches
+      const docResultsWithNames = docResults.map(result => ({
+        ...result,
+        documentName:
+          documents.find(d => d.id === result.documentId)?.originalName ||
+          result.documentId,
+        matches: result.matches.map(match => {
+          const dbChunk = dbChunks.find(c => c.id === match.id)
+          return {
+            ...match,
+            metadata: {
+              ...match.metadata,
+              contentPreview: dbChunk?.content || match.metadata?.contentPreview || '',
+            },
+          }
+        }),
+      }))
+
+      // Step 11: Build comparison prompt
+      messages = buildComparePrompt(question, docResultsWithNames)
+    }
+
+    // Step 12: Stream comparison response
     const stream = await streamLLMResponse(
       messages,
       async (fullResponse) => {
@@ -100,7 +110,7 @@ export async function POST(request) {
       }
     )
 
-    // Step 12: Return streaming response
+    // Step 13: Return streaming response
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
