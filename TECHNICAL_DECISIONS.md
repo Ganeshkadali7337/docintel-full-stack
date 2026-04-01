@@ -128,18 +128,6 @@ After Pinecone returns matching chunk IDs, the API fetches the full chunk conten
 
 ---
 
-## AI Tool Usage
-
-Claude Code was used throughout this project:
-
-- **Scaffolding:** Initial file structure, boilerplate API routes, Prisma schema relationships, and component shells were generated with Claude Code.
-- **RAG pipeline:** The chunker, embedder, and vectordb service logic was co-developed with Claude — the paragraph-aware chunking strategy and overlap logic required several iterations to get right.
-- **Prompt engineering:** The system prompt in `buildRAGPrompt` went through multiple revisions to reliably produce "I couldn't find..." responses rather than hallucinating answers.
-- **Bug fixes:** Pinecone SDK v7 API changes (`upsert({ records })` and `deleteMany({ filter })`), pdf-parse v2 API (`PDFParse` class), and Next.js 14 `experimental.serverComponentsExternalPackages` were all diagnosed and fixed with Claude's help.
-- **Review process:** All AI-generated code was read and understood before accepting. Security-critical code (auth middleware, JWT handling) was written manually and reviewed carefully. The full-chunk-from-DB fix and intent detection were identified as improvements during development and implemented deliberately.
-
----
-
 ## Scaling Considerations
 
 How this system would handle 1000x more documents and users:
