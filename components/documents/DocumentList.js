@@ -10,7 +10,29 @@ export default function DocumentList({
   selectedIds,
   onToggleSelect,
   onDelete,
+  isLoading,
 }) {
+  // Show spinner while fetching documents on initial load
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 gap-3">
+        <div className="doc-list-spinner" />
+        <p className="text-xs text-zinc-500">Loading documents…</p>
+        <style>{`
+          .doc-list-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #3f3f46;
+            border-top-color: #a1a1aa;
+            border-radius: 50%;
+            animation: docSpin 0.7s linear infinite;
+          }
+          @keyframes docSpin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    )
+  }
+
   // Show empty state when there are no documents to display
   if (!documents || documents.length === 0) {
     return (

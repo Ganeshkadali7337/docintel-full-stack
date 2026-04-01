@@ -19,3 +19,15 @@ body {
   height: 100%;
   overflow: hidden;
 }
+
+/* Mobile: sidebar is an overlay, so main-area always fills full width */
+@media (max-width: 767px) {
+  .main-area {
+    width: 100%;
+  }
+  /* Desktop sidebar hidden on mobile */
+  .sidebar-desktop {
+    display: none !important;
+  }
+}
+
