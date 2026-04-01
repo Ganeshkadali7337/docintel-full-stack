@@ -1,6 +1,8 @@
 // API route for single document operations
 // DELETE /api/documents/:id — delete a document, its Cloudinary file, chunks, and Pinecone vectors
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../../lib/auth/middleware'
 import { sendError, sendSuccess, handleApiError } from '../../../../lib/utils/errorHandler'
 import { getDocumentByIdAndUserId, deleteDocument } from '../../../../lib/db/queries/documents'

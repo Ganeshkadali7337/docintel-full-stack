@@ -1,6 +1,8 @@
 // Multi-document comparison API with streaming
 // Queries each document separately then builds a comparison prompt
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../lib/auth/middleware.js'
 import { sendError } from '../../../lib/utils/errorHandler.js'
 import { getDocumentByIdAndUserId } from '../../../lib/db/queries/documents.js'

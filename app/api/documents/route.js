@@ -2,6 +2,8 @@
 // GET  /api/documents — list all documents for the logged-in user
 // POST /api/documents — upload a new document and trigger processing pipeline
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../lib/auth/middleware'
 import { sendError, sendSuccess, handleApiError } from '../../../lib/utils/errorHandler'
 import { validateFile } from '../../../lib/utils/fileValidation'
