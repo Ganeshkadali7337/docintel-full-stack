@@ -1,6 +1,8 @@
 // GET endpoint to load an existing conversation with its messages
 // Used when user reopens a previous conversation
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../../../lib/auth/middleware.js'
 import { sendError, sendSuccess } from '../../../../../lib/utils/errorHandler.js'
 import { getConversationByIdAndUserId } from '../../../../../lib/db/queries/conversations.js'

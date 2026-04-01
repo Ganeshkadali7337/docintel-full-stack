@@ -1,6 +1,8 @@
 // API route for logging out
 // POST /api/auth/logout — clears the auth cookie
 
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { JWT_COOKIE_NAME } from '../../../../lib/utils/constants'
 import { handleApiError, sendError } from '../../../../lib/utils/errorHandler'

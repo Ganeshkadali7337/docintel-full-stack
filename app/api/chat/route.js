@@ -2,6 +2,8 @@
 // Flow (general chat): intent detect -> direct GPT-4o stream
 // Flow (document Q&A): intent detect -> embed -> search Pinecone -> RAG prompt -> stream
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from "../../../lib/auth/middleware.js";
 import { sendError } from "../../../lib/utils/errorHandler.js";
 import { getDocumentByIdAndUserId } from "../../../lib/db/queries/documents.js";

@@ -2,6 +2,8 @@
 // Proxies the file from Cloudinary so the browser downloads it with the correct
 // filename and extension. Required because cross-origin <a download> is ignored by browsers.
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../../../lib/auth/middleware'
 import { sendError, handleApiError } from '../../../../../lib/utils/errorHandler'
 import { getDocumentByIdAndUserId } from '../../../../../lib/db/queries/documents'

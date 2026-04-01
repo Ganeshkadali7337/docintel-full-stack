@@ -1,6 +1,9 @@
 // API route to get the currently logged-in user
 // GET /api/auth/me — returns the user's profile from their JWT cookie
 
+export const dynamic = 'force-dynamic'
+
+
 import { getUserById } from '../../../../lib/db/queries/users'
 import { getUserFromRequest } from '../../../../lib/auth/middleware'
 import { sendError, sendSuccess, handleApiError } from '../../../../lib/utils/errorHandler'

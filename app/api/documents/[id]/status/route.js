@@ -1,6 +1,8 @@
 // API route to poll a document's processing status
 // GET /api/documents/:id/status — used by the frontend to track processing progress
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../../../lib/auth/middleware'
 import { sendError, sendSuccess, handleApiError } from '../../../../../lib/utils/errorHandler'
 import { getDocumentByIdAndUserId } from '../../../../../lib/db/queries/documents'

@@ -1,6 +1,8 @@
 // Analytics API — returns real usage stats for selected document(s)
 // GET /api/analytics?documentIds=id1,id2
 
+export const dynamic = 'force-dynamic'
+
 import { getUserFromRequest } from '../../../lib/auth/middleware.js'
 import { sendError, sendSuccess } from '../../../lib/utils/errorHandler.js'
 import { prisma } from '../../../lib/db/client.js'
