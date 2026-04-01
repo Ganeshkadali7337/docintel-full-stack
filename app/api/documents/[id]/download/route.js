@@ -25,20 +25,16 @@ export async function GET(request, { params }) {
       return sendError(null, 'Failed to fetch file from storage', 502)
     }
 
-    // Determine content type from cloudinary response or fall back based on filename
-    const contentType =
-      cloudinaryResponse.headers.get('content-type') || 'application/octet-stream'
-
     // Sanitise filename for Content-Disposition header
     const safeFilename = document.originalName.replace(/["\\\r\n]/g, '_')
 
     return new Response(cloudinaryResponse.body, {
       status: 200,
       headers: {
-        'Content-Type': contentType,
-        // attachment forces browser to download rather than display
+        // Force octet-stream so browser always downloads — never tries to open inline
+        // (application/pdf would cause browsers to render PDFs instead of downloading)
+        'Content-Type': 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${safeFilename}"`,
-        // Forward content-length if available so the browser shows progress
         ...(cloudinaryResponse.headers.get('content-length')
           ? { 'Content-Length': cloudinaryResponse.headers.get('content-length') }
           : {}),

@@ -22,7 +22,6 @@ export default function DocumentCard({
 }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-
   async function handleConfirmDelete() {
     setIsDeleting(true)
     await onDelete(document.id)
@@ -64,20 +63,19 @@ export default function DocumentCard({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1 shrink-0 mt-0.5">
-          {/* Download button */}
-          <a
-            href={`/api/documents/${document.id}/download`}
-            download
-            className="text-zinc-700 hover:text-zinc-300 transition-colors"
+          {/* Download button — temporarily disabled */}
+          {/* <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="text-zinc-700 hover:text-zinc-300 transition-colors disabled:opacity-40"
             aria-label="Download document"
-            onClick={e => e.stopPropagation()}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-          </a>
+          </button> */}
 
           {/* Delete button */}
           <button
