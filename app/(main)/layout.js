@@ -3,10 +3,10 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import Navbar from '../../components/layout/Navbar'
 import { verifyToken } from '../../lib/auth/jwt'
 import { getUserById } from '../../lib/db/queries/users'
 import { JWT_COOKIE_NAME } from '../../lib/utils/constants'
+import MainLayoutClient from '../../components/layout/MainLayoutClient'
 
 // Server component — fetches user from DB using JWT in the cookie
 export default async function MainLayout({ children }) {
@@ -31,14 +31,8 @@ export default async function MainLayout({ children }) {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Top navigation bar with user info and logout */}
-      <Navbar user={user} />
-
-      {/* Page content fills the remaining height */}
-      <div className="flex-1 overflow-hidden">
-        {children}
-      </div>
-    </div>
+    <MainLayoutClient user={user}>
+      {children}
+    </MainLayoutClient>
   )
 }

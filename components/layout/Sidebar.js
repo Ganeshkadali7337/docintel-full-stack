@@ -1,4 +1,5 @@
 // Sidebar — upload zone, per-file progress list, search, document list, selection hint
+// On mobile: collapsible drawer using absolute positioning (scoped to the content area below navbar)
 
 'use client'
 
@@ -16,6 +17,9 @@ export default function Sidebar({
   onDelete,
   onUpload,
   uploadItems,
+  isLoading,
+  isMobileOpen,
+  onMobileClose,
 }) {
   const {
     search,
@@ -36,14 +40,12 @@ export default function Sidebar({
 
   const hint = getSelectionHint()
 
-  return (
-    <div className="w-64 shrink-0 border-r border-zinc-800 bg-[#18181b] flex flex-col h-full">
-
-      {/* Upload zone — always visible so user can queue more files */}
+  // ─── Shared panel content (used by both desktop + mobile drawer) ────────────
+  const panelContent = (
+    <>
+      {/* Upload zone */}
       <div className="p-3 border-b border-zinc-800 flex flex-col gap-2">
         <UploadZone onUpload={onUpload} isDisabled={false} />
-
-        {/* Per-file progress items — shown while uploading or processing */}
         {uploadItems.length > 0 && (
           <div className="flex flex-col gap-2">
             {uploadItems.map(item => (
@@ -58,7 +60,7 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Search and filter */}
+      {/* Search + filter */}
       <div className="border-b border-zinc-800">
         <SearchFilter
           search={search}
@@ -75,6 +77,7 @@ export default function Sidebar({
           selectedIds={selectedIds}
           onToggleSelect={onToggleSelect}
           onDelete={onDelete}
+          isLoading={isLoading}
         />
       </div>
 
@@ -82,6 +85,48 @@ export default function Sidebar({
       <div className="p-3 border-t border-zinc-800">
         <p className={`text-xs text-center ${hint.color}`}>{hint.text}</p>
       </div>
-    </div>
+    </>
+  )
+
+  return (
+    <>
+      {/* ── DESKTOP: static sidebar in the flex row (always visible ≥ md) ── */}
+      <div className="hidden md:flex flex-col w-64 shrink-0 border-r border-zinc-800 bg-[#18181b] h-full">
+        {panelContent}
+      </div>
+
+      {/* ── MOBILE: absolute drawer scoped to the content area (already below navbar) ── */}
+
+      {/* Backdrop — covers entire content area when drawer is open */}
+      {isMobileOpen && (
+        <div
+          className="md:hidden absolute inset-0 bg-black/60 z-40"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Drawer panel — slides in from the left within the content area */}
+      <div
+        className="md:hidden absolute top-0 left-0 bottom-0 w-64 z-50 flex flex-col bg-[#18181b] border-r border-zinc-800 transition-transform duration-300 ease-in-out"
+        style={{ transform: isMobileOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+      >
+        {/* Mobile-only header row with close button */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 shrink-0">
+          <span className="text-sm font-semibold text-zinc-300">Documents</span>
+          <button
+            onClick={onMobileClose}
+            className="w-7 h-7 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700/60 transition-colors"
+            aria-label="Close sidebar"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        {panelContent}
+      </div>
+    </>
   )
 }

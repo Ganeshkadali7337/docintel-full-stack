@@ -21,7 +21,7 @@ export default function MainArea({ selectedIds, documents }) {
   // No documents selected — show welcome empty state (no tabs)
   if (selectedIds.length === 0) {
     return (
-      <div className="main-area flex items-center justify-center bg-[#09090b]">
+      <div className="main-area flex items-center justify-center bg-[#09090b] w-full">
         <EmptyState
           title="Select a document to get started"
           subtitle="Click a document in the sidebar to chat with it, or select 2-3 to compare"

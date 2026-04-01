@@ -9,11 +9,15 @@ import MainArea from '../../components/layout/MainArea'
 import { useDocuments } from '../../hooks/useDocuments'
 import { showError } from '../../components/ui/Toast'
 import { MAX_SELECTED_DOCS } from '../../lib/utils/constants'
+import { useSidebarState } from '../../components/layout/MainLayoutClient'
 
 // Main dashboard — renders Sidebar (left) + MainArea (right) in a full-height row
 export default function DashboardPage() {
   // Array of selected document IDs — used to show chat or comparison mode
   const [selectedIds, setSelectedIds] = useState([])
+
+  // Mobile sidebar state from the layout context
+  const { isSidebarOpen, onSidebarClose } = useSidebarState()
 
   // All document state and operations are managed in this hook
   const {
@@ -55,7 +59,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       {/* Left sidebar: upload, search, and document list */}
       <Sidebar
         documents={documents}
@@ -64,9 +68,12 @@ export default function DashboardPage() {
         onDelete={deleteDocument}
         onUpload={uploadDocuments}
         uploadItems={uploadItems}
+        isLoading={isLoading}
+        isMobileOpen={isSidebarOpen}
+        onMobileClose={onSidebarClose}
       />
 
-      {/* Right main area: chat or comparison interface (Parts 3 and 4) */}
+      {/* Right main area: chat or comparison interface */}
       <MainArea
         selectedIds={selectedIds}
         documents={documents}
