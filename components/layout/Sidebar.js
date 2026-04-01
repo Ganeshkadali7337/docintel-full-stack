@@ -1,4 +1,4 @@
-// Sidebar — upload zone, search, document list, selection hint — dark theme
+// Sidebar — upload zone, per-file progress list, search, document list, selection hint
 
 'use client'
 
@@ -15,9 +15,7 @@ export default function Sidebar({
   onToggleSelect,
   onDelete,
   onUpload,
-  isUploading,
-  uploadProgress,
-  uploadingFile,
+  uploadItems,
 }) {
   const {
     search,
@@ -40,16 +38,23 @@ export default function Sidebar({
 
   return (
     <div className="w-64 shrink-0 border-r border-zinc-800 bg-[#18181b] flex flex-col h-full">
-      {/* Upload zone or progress */}
-      <div className="p-3 border-b border-zinc-800">
-        {isUploading ? (
-          <UploadProgress
-            filename={uploadingFile || 'Uploading...'}
-            uploadProgress={uploadProgress}
-            stage={uploadProgress < 100 ? 'uploading' : 'processing'}
-          />
-        ) : (
-          <UploadZone onUpload={onUpload} isUploading={isUploading} />
+
+      {/* Upload zone — always visible so user can queue more files */}
+      <div className="p-3 border-b border-zinc-800 flex flex-col gap-2">
+        <UploadZone onUpload={onUpload} isDisabled={false} />
+
+        {/* Per-file progress items — shown while uploading or processing */}
+        {uploadItems.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {uploadItems.map(item => (
+              <UploadProgress
+                key={item.id}
+                filename={item.name}
+                uploadProgress={item.progress}
+                stage={item.stage}
+              />
+            ))}
+          </div>
         )}
       </div>
 

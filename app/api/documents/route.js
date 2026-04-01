@@ -45,7 +45,8 @@ export async function POST(request) {
 
     if (!file) return sendError(null, 'No file provided', 400)
 
-    // Validate file type, size, and extension
+    // Validate before uploading to Cloudinary
+    // so we never waste Cloudinary storage on invalid files
     const validation = validateFile({
       size: file.size,
       mimetype: file.type,
@@ -67,7 +68,10 @@ export async function POST(request) {
       'docintel/documents'
     )
 
-    // Save the document record to the database (status starts as PENDING)
+    // Each upload gets its own independent document record and
+    // processing pipeline. Concurrent uploads are safe because
+    // they never share state — each has a unique ID and runs
+    // its pipeline independently.
     const document = await createDocument(
       tokenPayload.userId,
       safeFilename,
