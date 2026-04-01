@@ -5,9 +5,10 @@ const nextConfig = {
   // Keep strict mode on — helps catch bugs early in development
   reactStrictMode: true,
   experimental: {
-    // Prevent webpack from bundling pdf-parse — it uses pdfjs-dist which
-    // breaks under Next.js 14 webpack's module analysis (Object.defineProperty error)
-    serverComponentsExternalPackages: ['pdf-parse'],
+    // Exclude these packages from webpack bundling:
+    // - pdf-parse: uses pdfjs-dist which needs browser APIs not available in Node.js
+    // - tiktoken: uses WASM binary that webpack strips out during bundling
+    serverComponentsExternalPackages: ['pdf-parse', 'tiktoken'],
   },
 }
 
