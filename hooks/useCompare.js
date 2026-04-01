@@ -28,7 +28,7 @@ export function useCompare() {
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, documentIds })
+        body: JSON.stringify({ question, documentIds, conversationId })
       })
 
       if (!response.ok) {

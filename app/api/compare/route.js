@@ -9,8 +9,8 @@ import { getDocumentByIdAndUserId } from '../../../lib/db/queries/documents.js'
 import { generateEmbedding } from '../../../lib/services/embedder.js'
 import { queryVectorsForMultipleDocs } from '../../../lib/services/vectordb.js'
 import { buildComparePrompt, buildDirectPrompt, detectIntent, streamLLMResponse } from '../../../lib/services/llm.js'
-import { createComparisonConversation } from '../../../lib/db/queries/conversations.js'
-import { createMessage } from '../../../lib/db/queries/messages.js'
+import { createComparisonConversation, getConversationByIdAndUserId } from '../../../lib/db/queries/conversations.js'
+import { createMessage, getMessagesByConversationId } from '../../../lib/db/queries/messages.js'
 import { getChunksByIds } from '../../../lib/db/queries/chunks.js'
 
 export async function POST(request) {
@@ -20,7 +20,7 @@ export async function POST(request) {
     if (!user) return sendError(null, 'Unauthorized', 401)
 
     // Step 2: Parse request body
-    const { question, documentIds } = await request.json()
+    const { question, documentIds, conversationId } = await request.json()
 
     // Step 3: Validate inputs
     if (!question || !question.trim()) {
@@ -51,10 +51,19 @@ export async function POST(request) {
       )
     }
 
-    // Step 5: Create comparison conversation
-    const conversation = await createComparisonConversation(user.userId, documentIds)
+    // Step 5: Get or create comparison conversation
+    let conversation
+    if (conversationId) {
+      conversation = await getConversationByIdAndUserId(conversationId, user.userId)
+      if (!conversation) return sendError(null, 'Conversation not found', 404)
+    } else {
+      conversation = await createComparisonConversation(user.userId, documentIds)
+    }
 
-    // Step 6: Save user question
+    // Step 6: Load conversation history for follow-up support
+    const conversationHistory = await getMessagesByConversationId(conversation.id)
+
+    // Step 7: Save user question
     await createMessage(conversation.id, 'USER', question, null)
 
     // Step 7: Detect intent — skip RAG pipeline for general chat
@@ -64,7 +73,7 @@ export async function POST(request) {
 
     if (intent === 'general_chat') {
       // General chat — respond directly without touching vectors or documents
-      messages = buildDirectPrompt(question, [])
+      messages = buildDirectPrompt(question, conversationHistory)
     } else {
       // Step 8: Embed the question
       const questionEmbedding = await generateEmbedding(question)
@@ -98,8 +107,8 @@ export async function POST(request) {
         }),
       }))
 
-      // Step 11: Build comparison prompt
-      messages = buildComparePrompt(question, docResultsWithNames)
+      // Step 11: Build comparison prompt with conversation history
+      messages = buildComparePrompt(question, docResultsWithNames, conversationHistory)
     }
 
     // Step 12: Stream comparison response
