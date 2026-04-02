@@ -19,9 +19,17 @@ export default function DocumentCard({
   isSelected,
   onToggleSelect,
   onDelete,
+  onRetry,
 }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
+
+  async function handleRetry() {
+    setIsRetrying(true)
+    await onRetry(document.id)
+    setIsRetrying(false)
+  }
   async function handleConfirmDelete() {
     setIsDeleting(true)
     await onDelete(document.id)
@@ -76,6 +84,22 @@ export default function DocumentCard({
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
           </button> */}
+
+          {/* Retry button — only shown for failed documents */}
+          {document.status === 'FAILED' && (
+            <button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className={`transition-colors disabled:opacity-40 ${isRetrying ? 'text-yellow-400 animate-spin' : 'text-yellow-600 hover:text-yellow-400'}`}
+              aria-label="Retry processing"
+              title="Retry processing"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
+          )}
 
           {/* Delete button */}
           <button

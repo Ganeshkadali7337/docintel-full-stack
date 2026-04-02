@@ -61,8 +61,15 @@ export function useDocuments(selectedIds, setSelectedIds) {
           },
         })
 
-        const newDocument = response.data?.data?.document
+        const { document: newDocument, duplicate } = response.data?.data || {}
         if (!newDocument) throw new Error('Upload response missing document data')
+
+        // Duplicate detected — the same file was already uploaded and processed
+        if (duplicate) {
+          showError(`${file.name} was already uploaded`)
+          removeItem(itemId)
+          continue
+        }
 
         // Add the document to the list immediately (status = PENDING)
         setDocuments(prev => [newDocument, ...prev])
@@ -104,6 +111,30 @@ export function useDocuments(selectedIds, setSelectedIds) {
     }
   }
 
+  // Retry processing a failed document — resets status and re-runs pipeline
+  async function retryDocument(documentId) {
+    try {
+      await axios.post(`/api/documents/${documentId}/retry`)
+
+      // Reset status to PROCESSING immediately in local state
+      setDocuments(prev =>
+        prev.map(doc => doc.id === documentId ? { ...doc, status: 'PROCESSING', errorMessage: null } : doc)
+      )
+
+      // Poll until READY or FAILED
+      startPolling(documentId, ({ status, errorMessage, pageCount }) => {
+        setDocuments(prev =>
+          prev.map(doc => doc.id === documentId ? { ...doc, status, errorMessage, pageCount } : doc)
+        )
+        if (status === 'READY') showSuccess('Document is ready')
+        else if (status === 'FAILED') showError(`Retry failed: ${errorMessage || 'Unknown error'}`)
+      })
+    } catch (error) {
+      const message = error.response?.data?.error || 'Retry failed'
+      showError(message)
+    }
+  }
+
   // Delete a document by ID — removes it from state and deselects if selected
   async function deleteDocument(documentId) {
     try {
@@ -129,5 +160,6 @@ export function useDocuments(selectedIds, setSelectedIds) {
     fetchDocuments,
     uploadDocuments,
     deleteDocument,
+    retryDocument,
   }
 }

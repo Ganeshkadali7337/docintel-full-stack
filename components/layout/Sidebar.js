@@ -15,6 +15,7 @@ export default function Sidebar({
   selectedIds,
   onToggleSelect,
   onDelete,
+  onRetry,
   onUpload,
   uploadItems,
   isLoading,
@@ -77,6 +78,7 @@ export default function Sidebar({
           selectedIds={selectedIds}
           onToggleSelect={onToggleSelect}
           onDelete={onDelete}
+          onRetry={onRetry}
           isLoading={isLoading}
         />
       </div>

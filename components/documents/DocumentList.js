@@ -10,6 +10,7 @@ export default function DocumentList({
   selectedIds,
   onToggleSelect,
   onDelete,
+  onRetry,
   isLoading,
 }) {
   // Show spinner while fetching documents on initial load
@@ -52,6 +53,7 @@ export default function DocumentList({
           isSelected={selectedIds.includes(document.id)}
           onToggleSelect={onToggleSelect}
           onDelete={onDelete}
+          onRetry={onRetry}
         />
       ))}
     </div>
