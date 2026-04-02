@@ -14,6 +14,7 @@ User → Next.js Frontend (React components)
 ```
 
 **Request flow for a question:**
+
 1. User selects a document and types a question
 2. Frontend sends POST to `/api/chat` with question + documentId
 3. API detects intent (general chat vs document question) using gpt-4o-mini
@@ -22,6 +23,7 @@ User → Next.js Frontend (React components)
 6. Frontend reads the stream and renders tokens as they arrive
 
 **Upload and processing flow:**
+
 1. User uploads a file → API saves to Cloudinary, creates DB record (status: PENDING)
 2. API responds immediately — processing runs in the background
 3. Pipeline: extract text → chunk into 500-token pieces → generate embeddings → store in Pinecone
