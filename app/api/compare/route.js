@@ -91,7 +91,7 @@ export async function POST(request) {
       const dbChunks = await getChunksByIds(allChunkIds)
 
       // Add document names and merge full DB content into matches
-      const docResultsWithNames = docResults.map(result => ({
+      docResultsWithNames = docResults.map(result => ({
         ...result,
         documentName:
           documents.find(d => d.id === result.documentId)?.originalName ||
