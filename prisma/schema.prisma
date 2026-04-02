@@ -42,6 +42,7 @@ model Document {
   pageCount          Int?           // Filled after text extraction in Part 2
   cloudinaryUrl      String
   cloudinaryPublicId String
+  fileHash           String?        // SHA-256 hash of file bytes — used for duplicate detection
   status             DocumentStatus @default(PENDING)
   errorMessage       String?        // Filled if status is FAILED
   createdAt          DateTime       @default(now())

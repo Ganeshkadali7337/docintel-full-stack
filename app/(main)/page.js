@@ -28,6 +28,7 @@ export default function DashboardPage() {
     fetchDocuments,
     uploadDocuments,
     deleteDocument,
+    retryDocument,
   } = useDocuments(selectedIds, setSelectedIds)
 
   // Load documents when the page first mounts
@@ -70,6 +71,7 @@ export default function DashboardPage() {
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onDelete={deleteDocument}
+        onRetry={retryDocument}
         onUpload={uploadDocuments}
         uploadItems={uploadItems}
         isLoading={isLoading}

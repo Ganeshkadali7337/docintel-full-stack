@@ -67,7 +67,7 @@ export default function CompareWindow({ selectedDocuments }) {
             {displayMessages.map(message => (
               message.role === 'USER'
                 ? <MessageBubble key={message.id} message={message} />
-                : <CompareResult key={message.id} content={message.content} />
+                : <CompareResult key={message.id} content={message.content} sources={message.sources} />
             ))}
             {isStreaming && !streamingMessage && <StreamingIndicator />}
           </div>

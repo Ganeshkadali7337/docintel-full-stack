@@ -111,15 +111,26 @@ export async function POST(request) {
       messages = buildComparePrompt(question, docResultsWithNames, conversationHistory)
     }
 
-    // Step 12: Stream comparison response
+    // Step 12: Build source attribution from all matched chunks
+    const sources = intent === 'general_chat' ? [] : docResultsWithNames.flatMap(result =>
+      result.matches.map(match => ({
+        chunkId: match.id,
+        documentId: result.documentId,
+        documentName: result.documentName,
+        pageNumber: match.metadata?.pageNumber || null,
+        contentPreview: match.metadata?.contentPreview || '',
+      }))
+    )
+
+    // Step 13: Stream comparison response
     const stream = await streamLLMResponse(
       messages,
       async (fullResponse) => {
-        await createMessage(conversation.id, 'ASSISTANT', fullResponse, null)
+        await createMessage(conversation.id, 'ASSISTANT', fullResponse, sources.length > 0 ? sources : null)
       }
     )
 
-    // Step 13: Return streaming response
+    // Step 14: Return streaming response
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',

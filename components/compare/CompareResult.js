@@ -1,6 +1,8 @@
 // Renders a comparison response with clear per-document sections
 // Parses the assistant response and highlights each document's answer
 
+import SourceAttribution from '../chat/SourceAttribution.js'
+
 // Renders **bold** markdown inline without a library
 function renderMarkdown(text) {
   if (!text) return null
@@ -13,7 +15,7 @@ function renderMarkdown(text) {
   })
 }
 
-export default function CompareResult({ content }) {
+export default function CompareResult({ content, sources }) {
   if (!content) return null
 
   return (
@@ -21,6 +23,7 @@ export default function CompareResult({ content }) {
       <div className="compare-content">
         {renderMarkdown(content)}
       </div>
+      <SourceAttribution sources={sources} />
       <style>{`
         .compare-result {
           background: #18181b;

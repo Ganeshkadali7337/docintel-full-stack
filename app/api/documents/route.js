@@ -16,9 +16,11 @@ import { createChunks, getChunksByDocumentId } from '../../../lib/db/queries/chu
 import {
   createDocument,
   getDocumentsByUserId,
+  getDocumentByHash,
   updateDocumentStatus,
   updateDocumentPageCount,
 } from '../../../lib/db/queries/documents'
+import { createHash } from 'crypto'
 
 // GET /api/documents — return all documents for the logged-in user
 export async function GET(request) {
@@ -63,6 +65,15 @@ export async function POST(request) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    // Compute SHA-256 hash of file bytes for duplicate detection
+    const fileHash = createHash('sha256').update(buffer).digest('hex')
+
+    // Check if this user already has a READY document with the same file content
+    const existing = await getDocumentByHash(fileHash, tokenPayload.userId)
+    if (existing) {
+      return sendSuccess(null, { document: existing, duplicate: true }, 'Document already uploaded', 200)
+    }
+
     // Upload the file to Cloudinary
     const { url: cloudinaryUrl, publicId: cloudinaryPublicId } = await uploadFile(
       buffer,
@@ -80,7 +91,8 @@ export async function POST(request) {
       file.name,
       file.size,
       cloudinaryUrl,
-      cloudinaryPublicId
+      cloudinaryPublicId,
+      fileHash
     )
 
     // Fire the processing pipeline in the background — do NOT await it
