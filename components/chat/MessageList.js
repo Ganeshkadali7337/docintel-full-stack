@@ -1,5 +1,5 @@
 // Scrollable list of all messages in a conversation
-// Auto-scrolls to bottom when new messages arrive
+// Auto-scrolls to bottom whenever messages change or streaming updates
 
 'use client'
 import { useEffect, useRef } from 'react'
@@ -7,25 +7,25 @@ import MessageBubble from './MessageBubble.js'
 import StreamingIndicator from './StreamingIndicator.js'
 
 export default function MessageList({ messages, isStreaming }) {
-  const bottomRef = useRef(null)
+  const listRef = useRef(null)
 
-  // Auto-scroll to bottom whenever messages change or streaming starts
+  // Scroll to bottom after every render — covers both new messages and streaming chunks
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isStreaming])
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
+    }
+  })
 
-  // No messages yet — show nothing, the header subtitle is enough guidance
   if (messages.length === 0 && !isStreaming) {
-    return <div className="message-list" style={{ background: '#09090b' }} />
+    return <div className="message-list" ref={listRef} style={{ background: '#09090b' }} />
   }
 
   return (
-    <div className="message-list">
+    <div className="message-list" ref={listRef}>
       {messages.map(message => (
         <MessageBubble key={message.id} message={message} />
       ))}
       {isStreaming && <StreamingIndicator />}
-      <div ref={bottomRef} />
       <style>{`
         .message-list {
           flex: 1;

@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/layout/Sidebar'
 import MainArea from '../../components/layout/MainArea'
+import UploadModal from '../../components/documents/UploadModal'
 import { useDocuments } from '../../hooks/useDocuments'
 import { showError } from '../../components/ui/Toast'
 import { MAX_SELECTED_DOCS } from '../../lib/utils/constants'
@@ -60,6 +61,9 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-full relative">
+      {/* Upload progress modal — shown while any file is being uploaded/processed */}
+      <UploadModal uploadItems={uploadItems} />
+
       {/* Left sidebar: upload, search, and document list */}
       <Sidebar
         documents={documents}

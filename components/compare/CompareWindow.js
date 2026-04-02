@@ -2,7 +2,7 @@
 // Shows selected document names at top and comparison results below
 
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useCompare } from '../../hooks/useCompare.js'
 import CompareResult from './CompareResult.js'
 import ChatInput from '../chat/ChatInput.js'
@@ -24,6 +24,14 @@ export default function CompareWindow({ selectedDocuments }) {
   }, [selectedDocuments.map(d => d.id).join(',')])
 
   const documentIds = selectedDocuments.map(d => d.id)
+  const messagesEndRef = useRef(null)
+
+  // Auto-scroll to bottom after every render
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight
+    }
+  })
 
   function handleSend(question) {
     sendCompareMessage(question, documentIds)
@@ -55,7 +63,7 @@ export default function CompareWindow({ selectedDocuments }) {
 
       {displayMessages.length > 0 || isStreaming ? (
         <>
-          <div className="compare-messages">
+          <div className="compare-messages" ref={messagesEndRef}>
             {displayMessages.map(message => (
               message.role === 'USER'
                 ? <MessageBubble key={message.id} message={message} />
