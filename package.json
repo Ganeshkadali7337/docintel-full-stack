@@ -25,7 +25,8 @@
     "react-dom": "^18",
     "react-dropzone": "^15.0.0",
     "react-hot-toast": "^2.6.0",
-    "tiktoken": "^1.0.22"
+    "tiktoken": "^1.0.22",
+    "unpdf": "^1.4.0"
   },
   "devDependencies": {
     "eslint": "^8",
