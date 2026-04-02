@@ -70,6 +70,7 @@ export async function POST(request) {
     const intent = await detectIntent(question)
 
     let messages
+    let docResultsWithNames = []
 
     if (intent === 'general_chat') {
       // General chat — respond directly without touching vectors or documents
