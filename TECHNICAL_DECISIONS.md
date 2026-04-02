@@ -94,6 +94,42 @@ The processing pipeline runs fire-and-forget after the upload API responds:
 - Status polling keeps the user informed without blocking the upload API
 - If the pipeline fails, the document is marked FAILED with a specific error message
 
+### Duplicate Document Detection
+
+SHA-256 hashing prevents redundant processing when the same file is uploaded more than once:
+
+- The file buffer is hashed immediately after reading the multipart form data
+- The hash is checked against existing READY documents for the same user before any other operation runs
+- If a match is found, the existing document is returned instantly — no Cloudinary upload, no text extraction, no embedding calls
+- This eliminates wasted API spend when users re-upload the same file
+- The hash is stored in a `fileHash` column on the Document table
+
+### Retry Pipeline for Failed Documents
+
+Failed documents can be retried from the UI without re-uploading the file:
+
+- A `POST /api/documents/[id]/retry` route resets the document status and re-runs the full processing pipeline in the background
+- Before re-processing, any partial data from the previous attempt (DB chunks, Pinecone vectors) is deleted first to avoid duplicates
+- The file is re-downloaded from Cloudinary using Node's native `https` module to avoid issues with Next.js's request-context-bound `fetch` in background tasks
+- The frontend shows a retry icon on FAILED document cards and polls status exactly like a fresh upload
+
+### Source Attribution in Multi-Document Comparison
+
+Comparison responses include per-document, per-page source attribution:
+
+- After querying Pinecone for each document separately, sources are collected from all matched chunks — each carrying `documentId`, `documentName`, and `pageNumber`
+- Saved to the `Message.sources` JSON field alongside the response text
+- The `SourceAttribution` component detects multi-document context and renders `DocumentName · Page X` badges rather than plain `Page X`, making it clear which document each cited passage came from
+
+### Conversation Export as PDF
+
+Users can export conversation history to a structured, readable PDF:
+
+- Each conversation row in the history panel has an individual export button
+- A top-level "Export Full History" button exports every conversation for the selected document(s) into one combined PDF, with each conversation on a new page
+- PDF generation is entirely client-side via `jsPDF` — no server round-trip or new API endpoint needed
+- PDF layout includes: branded header with document names and export date, per-conversation type and timestamp headers, color-coded message blocks with left accent bars distinguishing user from assistant, source page attribution below assistant replies, and a page counter footer on every page
+
 ### Intent Detection Before RAG
 
 A gpt-4o-mini call classifies each message as `general_chat` or `knowledge_base` before running the full RAG pipeline:
@@ -130,13 +166,25 @@ After Pinecone returns matching chunk IDs, the API fetches the full chunk conten
 
 ## AI Tool Usage
 
-Claude Code was used throughout this project:
+This project was built through a deliberate collaboration between my own architectural design and Claude Code as a coding accelerator.
 
-- **Scaffolding:** Initial file structure, boilerplate API routes, Prisma schema relationships, and component shells were generated with Claude Code.
-- **RAG pipeline:** The chunker, embedder, and vectordb service logic was co-developed with Claude — the paragraph-aware chunking strategy and overlap logic required several iterations to get right.
-- **Prompt engineering:** The system prompt in `buildRAGPrompt` went through multiple revisions to reliably produce "I couldn't find..." responses rather than hallucinating answers.
-- **Bug fixes:** Pinecone SDK v7 API changes (`upsert({ records })` and `deleteMany({ filter })`), pdf-parse v2 API (`PDFParse` class), and Next.js 14 `experimental.serverComponentsExternalPackages` were all diagnosed and fixed with Claude's help.
-- **Review process:** All AI-generated code was read and understood before accepting. Security-critical code (auth middleware, JWT handling) was written manually and reviewed carefully. The full-chunk-from-DB fix and intent detection were identified as improvements during development and implemented deliberately.
+**My role — architecture and product decisions:**
+
+The overall system design was planned before writing a single line of code. This included the database schema (normalised five-table design with cascade deletes), the decision to keep chunk content in PostgreSQL rather than Pinecone metadata, the fire-and-forget pipeline pattern, the intent detection layer before RAG, the multi-document comparison flow with per-document vector queries, and the full feature scope. These structural decisions were mine — Claude Code executed them.
+
+**How Claude Code was used:**
+
+- **Project setup and scaffolding:** I described the architecture and Claude Code generated the initial file structure, Prisma schema, API route shells, and component layout. This saved hours of boilerplate work.
+- **Service implementations:** The chunker, embedder, vectordb service, and LLM streaming logic were co-developed with Claude Code — I specified the behaviour (paragraph-aware chunking, token-based overlap, SSE streaming protocol) and Claude translated it into working code that I reviewed and adjusted.
+- **Prompt engineering:** The RAG system prompt and comparison prompt went through several iterations. I directed what constraints the prompt needed ("only answer from context", "never hallucinate") and Claude Code drafted and refined the prompt text.
+- **Feature implementation:** Newer features — duplicate document detection, the retry pipeline, source attribution for comparisons, and the PDF export — were implemented with Claude Code assistance. I described exactly what each feature should do and how it should integrate with the existing system; Claude wrote the code and I reviewed each change.
+- **Debugging:** Integration issues such as Pinecone SDK v7 API differences, Next.js App Router `fetch` behaviour in background tasks, and Cloudinary raw resource access were diagnosed and resolved with Claude Code's help.
+
+**What was reviewed and adjusted manually:**
+
+All security-critical code — JWT signing and verification, password hashing, ownership checks on every API route — was read line by line and verified manually. When Claude Code generated code that did not match my intended design (e.g., the original page number estimation logic), it was identified through code review and corrected. No AI-generated code was accepted without reading and understanding it.
+
+**Summary:** Claude Code acted as a fast, capable implementation partner. The architectural decisions, product design, and final code review remained mine throughout. The combination allowed the full feature set to be shipped in the assessment window without sacrificing code quality or understanding.
 
 ---
 
