@@ -1,5 +1,5 @@
-// Main content area — switches between empty state, chat/compare, and analytics
-// Two tabs: Chat and Analytics — both available whenever docs are selected
+// Main content area — switches between empty state, chat/compare, analytics, and history
+// Tabs: Chat/Compare · Analytics · History
 
 'use client'
 import { useState, useEffect } from 'react'
@@ -7,6 +7,7 @@ import EmptyState from '../ui/EmptyState.js'
 import ChatWindow from '../chat/ChatWindow.js'
 import CompareWindow from '../compare/CompareWindow.js'
 import AnalyticsPanel from '../analytics/AnalyticsPanel.js'
+import ConversationHistory from '../chat/ConversationHistory.js'
 
 export default function MainArea({ selectedIds, documents }) {
   const [activeTab, setActiveTab] = useState('chat')
@@ -30,7 +31,8 @@ export default function MainArea({ selectedIds, documents }) {
     )
   }
 
-  // Render tab bar + content for any selection (1, 2, or 3 docs)
+  const chatLabel = selectedIds.length === 1 ? 'Chat' : 'Compare'
+
   return (
     <div className="main-area bg-[#09090b]" style={{ display: 'flex', flexDirection: 'column' }}>
 
@@ -40,7 +42,13 @@ export default function MainArea({ selectedIds, documents }) {
           className={`tab-btn ${activeTab === 'chat' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('chat')}
         >
-          {selectedIds.length === 1 ? 'Chat' : 'Compare'}
+          {chatLabel}
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'history' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          History
         </button>
         <button
           className={`tab-btn ${activeTab === 'analytics' ? 'tab-active' : ''}`}
@@ -57,11 +65,20 @@ export default function MainArea({ selectedIds, documents }) {
       {activeTab === 'chat' && selectedIds.length >= 2 && (
         <CompareWindow selectedDocuments={selectedDocuments} />
       )}
+      {activeTab === 'history' && (
+        <ConversationHistory selectedDocuments={selectedDocuments} />
+      )}
       {activeTab === 'analytics' && (
         <AnalyticsPanel selectedDocuments={selectedDocuments} />
       )}
 
       <style>{`
+        .main-area {
+          flex: 1;
+          min-width: 0;
+          height: 100%;
+          overflow: hidden;
+        }
         .tab-bar {
           display: flex;
           gap: 0;
@@ -90,4 +107,3 @@ export default function MainArea({ selectedIds, documents }) {
     </div>
   )
 }
-

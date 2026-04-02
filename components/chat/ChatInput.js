@@ -80,7 +80,7 @@ export default function ChatInput({ onSend, isDisabled }) {
           background: #f4f4f5;
           color: #09090b;
           cursor: pointer;
-          align-self: flex-end;
+          align-self: center;
           font-weight: 500;
         }
         .send-button:disabled {
